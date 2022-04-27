@@ -1,7 +1,8 @@
-const vosk = require('vosk')
+const vosk = require('vosk');
 const fs = require("fs");
 const mic = require("mic");
-const { Client } = require("openrgb-sdk")
+const exec = require('child_process').execSync;
+const { Client } = require("openrgb-sdk");
 
 MODEL_PATH = "/home/prayuj/Projects/VoiceRecognition/model"
 SAMPLE_RATE = 16000
@@ -23,8 +24,8 @@ const start = async () => {
     }
     await setColor(0, 0, 0);
     if (!fs.existsSync(MODEL_PATH)) {
-        console.log("Please download the model from https://alphacephei.com/vosk/models and unpack as " + MODEL_PATH + " in the current folder.")
-        process.exit()
+        console.log("Cannot find any models in the specified folder.");
+        process.exit();
     }
     vosk.setLogLevel(0);
     const model = new vosk.Model(MODEL_PATH);
@@ -61,33 +62,35 @@ const start = async () => {
 
 const stripBackground = (text) => {
     let array = text.split(' ');
-    if (array[0] == 'the') {
-        array.shift();
-    }
-    return array;
+    return array.filter(i => (i != 'the' && i.replace(/\s/g, '').length > 0));
 }
 
 const processPartial = async (partial) => {
-    for (let i = 0; i < partial.length; i++) {
-        if (terminators.includes(partial[i]) || (i < partial.length - 1 && partial[i] == 'never' && partial[i + 1] == 'mind')) {
-            stopped = true;
-            return;
+    if (partial.length > 0) {
+        for (let i = 0; i < partial.length; i++) {
+            if (terminators.includes(partial[i]) || (i < partial.length - 1 && partial[i] === 'never' && partial[i + 1] === 'mind')) {
+                stopped = true;
+                return;
+            }
         }
+        if (partial[0] === 'computer') {
+            await setColor(255, 255, 255);
+        }
+        console.log(partial.join(' '));
     }
-    if (partial[0] == 'computer') {
-        await setColor(255, 255, 255);
-    }
-    console.log(partial.join(' '));
 }
 
 const parseResult = async (result) => {
-    if (stopped) stopped = false;
-    console.log("Result: " + result.join(' '));
-    if (result[0] == 'computer' && result.length == 1) {
-        waiting = true;
-    }
-    else if (waiting) {
-        await setColor(0, 0, 0);
+    if (result.length > 0) {
+        let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
+        if (stopped) stopped = false;
+        console.log("Result: " + result.join(' '));
+        if (result[0] === 'computer' && result.length === 1) {
+            waiting = true;
+        }
+        else if (waiting) {
+            await setColor(0, 0, 0);
+        }
     }
 }
 
