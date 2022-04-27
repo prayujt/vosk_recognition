@@ -70,7 +70,7 @@ const start = async () => {
 
 const stripBackground = (text) => {
     let array = text.split(' ');
-    return array.filter(i => (i != 'the' && i != 'to' && i.replace(/\s/g, '').length > 0));
+    return array.filter(i => (i != 'the' && i != 'to' && i != 'by' && i.replace(/\s/g, '').length > 0));
 }
 
 const processPartial = async (partial) => {
@@ -108,14 +108,14 @@ const parseResult = async (result) => {
             result.shift();
             let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
             //process result
-            let processor = exec('python ./processing.py ' + result.join(' '));
+            let processor = exec('python /home/prayuj/Projects/VoiceRecognition/processing.py \"' + result.join(' ') + '\"');
             await setColor(0, 0, 0);
         }
         else if (waiting) {
             waiting = false;
             let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
             // process result
-            let processor = exec('python ./processing.py ' + result.join(' '));
+            let processor = exec('python /home/prayuj/Projects/VoiceRecognition/processing.py \"' + result.join(' ') + '\"');
             await setColor(0, 0, 0);
         }
         last_partial = '';
