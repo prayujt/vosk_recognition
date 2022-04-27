@@ -1,1 +1,2 @@
-An automation of Linux shell commands using Vosk's offline voice recognition API
+# Vosk API Voice Recognition
+This project will use Vosk's NodeJS API to automate shell commands on Linux
