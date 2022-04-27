@@ -11,12 +11,18 @@ SAMPLE_RATE = 16000
 const client = new Client("openrgb-client", 6742, "localhost");
 var controllers = [];
 const terminators = ['cancel', 'stop']
+const delay = 2000;
+const longDelay = 5000;
 
 let waiting = false;
-let stopped = false;
 let last_partial = '';
+
+const model = new vosk.Model(MODEL_PATH);
+const rec = new vosk.Recognizer({model: model, sampleRate: SAMPLE_RATE});
+
 const timer = new Timer(() => {
-    console.log('Timer is up');
+    rec.reset();
+    await setColor(0, 0, 0);
 });
 
 const start = async () => {
@@ -33,8 +39,6 @@ const start = async () => {
         process.exit();
     }
     vosk.setLogLevel(0);
-    const model = new vosk.Model(MODEL_PATH);
-    const rec = new vosk.Recognizer({model: model, sampleRate: SAMPLE_RATE});
 
     var micInstance = mic({
         rate: String(SAMPLE_RATE),
@@ -51,10 +55,8 @@ const start = async () => {
             if (temp != undefined) parseResult(stripBackground(temp.text));
         }
         else {
-            if (!stopped) {
-                let temp = rec.partialResult();
-                let partial = processPartial(stripBackground(temp.partial));
-            }
+            let temp = rec.partialResult();
+            let partial = processPartial(stripBackground(temp.partial));
         }
     });
     process.on('SIGINT', function() {
@@ -75,7 +77,10 @@ const processPartial = async (partial) => {
     if (partial.length > 0 && string !== last_partial) {
         for (let i = 0; i < partial.length; i++) {
             if (terminators.includes(partial[i]) || (i < partial.length - 1 && partial[i] === 'never' && partial[i + 1] === 'mind')) {
-                stopped = true;
+                timer.clear();
+                rec.reset();
+                await setColor(0, 0, 0);
+                last_partial = '';
                 return;
             }
         }
@@ -85,23 +90,25 @@ const processPartial = async (partial) => {
         console.log(string);
         last_partial = string;
         timer.clear();
-        timer.start(2000);
+        timer.start(delay, rec);
     }
 }
 
 const parseResult = async (result) => {
     if (result.length > 0) {
         timer.clear();
-        let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
-        if (stopped) stopped = false;
         console.log("Result: " + result.join(' '));
         if (result[0] === 'computer' && result.length === 1) {
             waiting = true;
+            timer.start(longDelay, rec);
         }
         else if (waiting) {
             waiting = false;
+            let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
+            // process result
             await setColor(0, 0, 0);
         }
+        last_partial = '';
     }
 }
 
