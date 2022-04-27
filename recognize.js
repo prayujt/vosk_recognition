@@ -3,13 +3,15 @@ const fs = require("fs");
 const mic = require("mic");
 const { Client } = require("openrgb-sdk")
 
-MODEL_PATH = "model"
+MODEL_PATH = "/home/prayuj/Projects/VoiceRecognition/model"
 SAMPLE_RATE = 16000
 
 const client = new Client("openrgb-client", 6742, "localhost");
 var controllers = [];
+const terminators = ['cancel', 'stop']
 
 let waiting = false;
+let stopped = false;
 
 const start = async () => {
     await client.connect();
@@ -39,12 +41,14 @@ const start = async () => {
 
     micInputStream.on('data', (data) => {
         if (rec.acceptWaveform(data)) {
-            let result = rec.result();
-            if (result != undefined) parseResult(stripBackground(result.text));
+            let temp = rec.result();
+            if (temp != undefined) parseResult(stripBackground(temp.text));
         }
         else {
-            let partial = rec.partialResult();
-            processPartial(stripBackground(partial.partial));
+            if (!stopped) {
+                let temp = rec.partialResult();
+                let partial = processPartial(stripBackground(temp.partial));
+            }
         }
     });
     process.on('SIGINT', function() {
@@ -64,6 +68,12 @@ const stripBackground = (text) => {
 }
 
 const processPartial = async (partial) => {
+    for (let i = 0; i < partial.length; i++) {
+        if (terminators.includes(partial[i]) || (i < partial.length - 1 && partial[i] == 'never' && partial[i + 1] == 'mind')) {
+            stopped = true;
+            return;
+        }
+    }
     if (partial[0] == 'computer') {
         await setColor(255, 255, 255);
     }
@@ -71,6 +81,7 @@ const processPartial = async (partial) => {
 }
 
 const parseResult = async (result) => {
+    if (stopped) stopped = false;
     console.log("Result: " + result.join(' '));
     if (result[0] == 'computer' && result.length == 1) {
         waiting = true;
