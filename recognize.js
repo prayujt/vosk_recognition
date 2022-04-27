@@ -2,6 +2,7 @@ const vosk = require('vosk');
 const fs = require("fs");
 const mic = require("mic");
 const exec = require('child_process').execSync;
+const { Timer } = require('nodejs-timer');
 const { Client } = require("openrgb-sdk");
 
 MODEL_PATH = "/home/prayuj/Projects/VoiceRecognition/model"
@@ -13,6 +14,10 @@ const terminators = ['cancel', 'stop']
 
 let waiting = false;
 let stopped = false;
+let last_partial = '';
+const timer = new Timer(() => {
+    console.log('Timer is up');
+});
 
 const start = async () => {
     await client.connect();
@@ -66,22 +71,27 @@ const stripBackground = (text) => {
 }
 
 const processPartial = async (partial) => {
-    if (partial.length > 0) {
+    string = partial.join(' ')
+    if (partial.length > 0 && string !== last_partial) {
         for (let i = 0; i < partial.length; i++) {
             if (terminators.includes(partial[i]) || (i < partial.length - 1 && partial[i] === 'never' && partial[i + 1] === 'mind')) {
                 stopped = true;
                 return;
             }
         }
-        if (partial[0] === 'computer') {
+        if (partial[0] === 'computer' && partial.length == 1) {
             await setColor(255, 255, 255);
         }
-        console.log(partial.join(' '));
+        console.log(string);
+        last_partial = string;
+        timer.clear();
+        timer.start(2000);
     }
 }
 
 const parseResult = async (result) => {
     if (result.length > 0) {
+        timer.clear();
         let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
         if (stopped) stopped = false;
         console.log("Result: " + result.join(' '));
@@ -89,6 +99,7 @@ const parseResult = async (result) => {
             waiting = true;
         }
         else if (waiting) {
+            waiting = false;
             await setColor(0, 0, 0);
         }
     }
