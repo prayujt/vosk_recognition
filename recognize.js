@@ -20,9 +20,10 @@ let last_partial = '';
 const model = new vosk.Model(MODEL_PATH);
 const rec = new vosk.Recognizer({model: model, sampleRate: SAMPLE_RATE});
 
-const timer = new Timer(() => {
+const timer = new Timer(async () => {
     rec.reset();
     await setColor(0, 0, 0);
+    waiting = false;
 });
 
 const start = async () => {
@@ -69,7 +70,7 @@ const start = async () => {
 
 const stripBackground = (text) => {
     let array = text.split(' ');
-    return array.filter(i => (i != 'the' && i.replace(/\s/g, '').length > 0));
+    return array.filter(i => (i != 'the' && i != 'to' && i.replace(/\s/g, '').length > 0));
 }
 
 const processPartial = async (partial) => {
@@ -84,13 +85,13 @@ const processPartial = async (partial) => {
                 return;
             }
         }
-        if (partial[0] === 'computer' && partial.length == 1) {
+        if (partial[0] === 'computer') {
             await setColor(255, 255, 255);
         }
         console.log(string);
         last_partial = string;
         timer.clear();
-        timer.start(delay, rec);
+        timer.start(delay);
     }
 }
 
@@ -100,12 +101,21 @@ const parseResult = async (result) => {
         console.log("Result: " + result.join(' '));
         if (result[0] === 'computer' && result.length === 1) {
             waiting = true;
-            timer.start(longDelay, rec);
+            timer.start(longDelay);
+        }
+        else if (result[0] === 'computer' && result.length > 1) {
+            waiting = false;
+            result.shift();
+            let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
+            //process result
+            let processor = exec('python ./processing.py ' + result.join(' '));
+            await setColor(0, 0, 0);
         }
         else if (waiting) {
             waiting = false;
             let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
             // process result
+            let processor = exec('python ./processing.py ' + result.join(' '));
             await setColor(0, 0, 0);
         }
         last_partial = '';
