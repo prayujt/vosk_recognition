@@ -11,7 +11,7 @@ SAMPLE_RATE = 16000
 const client = new Client('openrgb-client', 6742, 'localhost');
 var controllers = [];
 const terminators = ['cancel', 'stop'];
-const background = ['the', 'on', 'to', 'from', 'on', 'in', 'by', 'this'];
+const background = ['the', 'on', 'to', 'from', 'on', 'in', 'by', 'this', 'at'];
 const delay = 2000;
 const longDelay = 2500;
 

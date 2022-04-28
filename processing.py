@@ -52,7 +52,7 @@ def __main__():
                 command = 'pactl set-sink-volume {0} {1}%'.format(sink, w2n.word_to_num(' '.join(words[index+1:])))
             elif changeType == 'increase':
                 command = 'pactl set-sink-volume {0} +{1}%'.format(sink, w2n.word_to_num(' '.join(words[index+1:])))
-            elif changeType == 'decrease':
+            elif changeType == 'decrease' or changeType == 'lower':
                 command = 'pactl set-sink-volume {0} -{1}%'.format(sink, w2n.word_to_num(' '.join(words[index+1:])))
 
     elif words[0] == 'quit' or words[0] == 'close' or words[0] == 'exit':
