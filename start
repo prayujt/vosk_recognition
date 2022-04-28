@@ -9,8 +9,6 @@ then
 elif [[ ${card1:0:1} == "X" ]]
 then 
     card=1 
-else
-    card=0
 fi
 sink=0
 pactl list short sinks | while read -r line ; do
