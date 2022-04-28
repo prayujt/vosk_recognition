@@ -1,21 +1,25 @@
 const vosk = require('vosk');
-const fs = require("fs");
-const mic = require("mic");
-const exec = require('child_process').execSync;
+const fs = require('fs');
+const mic = require('mic');
+const exec = require('child_process').exec;
 const { Timer } = require('nodejs-timer');
-const { Client } = require("openrgb-sdk");
+const { Client } = require('openrgb-sdk');
 
-MODEL_PATH = "/home/prayuj/Projects/VoiceRecognition/model"
+MODEL_PATH = '/home/prayuj/Projects/VoiceRecognition/model'
 SAMPLE_RATE = 16000
 
-const client = new Client("openrgb-client", 6742, "localhost");
+const client = new Client('openrgb-client', 6742, 'localhost');
 var controllers = [];
-const terminators = ['cancel', 'stop']
+const terminators = ['cancel', 'stop'];
+const background = ['the', 'on', 'to', 'from', 'on', 'in', 'by', 'this'];
 const delay = 2000;
-const longDelay = 5000;
+const longDelay = 2500;
+
 
 let waiting = false;
 let last_partial = '';
+let card = process.argv[2]
+let sink = process.argv[3]
 
 const model = new vosk.Model(MODEL_PATH);
 const rec = new vosk.Recognizer({model: model, sampleRate: SAMPLE_RATE});
@@ -33,10 +37,9 @@ const start = async () => {
         let device = await client.getControllerData(i);
         await client.setCustomMode(i);
         controllers.push(device);
-    }
-    await setColor(0, 0, 0);
+    } await setColor(0, 0, 0);
     if (!fs.existsSync(MODEL_PATH)) {
-        console.log("Cannot find any models in the specified folder.");
+        console.log('Cannot find any models in the specified folder.');
         process.exit();
     }
     vosk.setLogLevel(0);
@@ -44,6 +47,7 @@ const start = async () => {
     var micInstance = mic({
         rate: String(SAMPLE_RATE),
         channels: '1',
+        device: 'plughw:' + card + ',0',
         debug: false
     });
 
@@ -62,7 +66,7 @@ const start = async () => {
     });
     process.on('SIGINT', function() {
         console.log(rec.finalResult());
-        console.log("\nDone");
+        console.log('\nDone');
         rec.free();
         model.free();
     });
@@ -70,7 +74,7 @@ const start = async () => {
 
 const stripBackground = (text) => {
     let array = text.split(' ');
-    return array.filter(i => (i != 'the' && i != 'to' && i != 'by' && i.replace(/\s/g, '').length > 0));
+    return array.filter(i => (!(background.includes(i)) && i.replace(/\s/g, '').length > 0));
 }
 
 const processPartial = async (partial) => {
@@ -98,7 +102,7 @@ const processPartial = async (partial) => {
 const parseResult = async (result) => {
     if (result.length > 0) {
         timer.clear();
-        console.log("Result: " + result.join(' '));
+        console.log('Result: ' + result.join(' '));
         if (result[0] === 'computer' && result.length === 1) {
             waiting = true;
             timer.start(longDelay);
@@ -108,14 +112,14 @@ const parseResult = async (result) => {
             result.shift();
             let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
             //process result
-            let processor = exec('python /home/prayuj/Projects/VoiceRecognition/processing.py \"' + result.join(' ') + '\"');
+            let processor = exec('python /home/prayuj/Projects/VoiceRecognition/processing.py \"' + result.join(' ') + '\"' + ' ' + sink);
             await setColor(0, 0, 0);
         }
         else if (waiting) {
             waiting = false;
             let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
             // process result
-            let processor = exec('python /home/prayuj/Projects/VoiceRecognition/processing.py \"' + result.join(' ') + '\"');
+            let processor = exec('python /home/prayuj/Projects/VoiceRecognition/processing.py \"' + result.join(' ') + '\"' + ' ' + sink);
             await setColor(0, 0, 0);
         }
         last_partial = '';

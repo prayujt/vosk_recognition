@@ -1,0 +1,21 @@
+#!/bin/bash
+devices=$(arecord -l)
+card0=${devices#*"card 0: "}
+card1=${devices#*"card 1: "}
+card=0
+if [[ ${card0:0:1} == "X" ]]
+then 
+    card=0
+elif [[ ${card1:0:1} == "X" ]]
+then 
+    card=1 
+else
+    card=0
+fi
+sink=0
+pactl list short sinks | while read -r line ; do
+    if [[ ${line:2:15} == "alsa_output.usb" ]] ; then
+        node /home/prayuj/Projects/VoiceRecognition/recognize.js $card ${line:0:1}
+        break
+    fi
+done
