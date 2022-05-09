@@ -5,7 +5,7 @@ const exec = require('child_process').exec;
 const { Timer } = require('nodejs-timer');
 const { Client } = require('openrgb-sdk');
 
-MODEL_PATH = '/home/prayuj/Projects/VoiceRecognition/model'
+MODEL_PATH = '/home/prayuj/repos/vosk_recognition/model'
 SAMPLE_RATE = 16000
 
 const client = new Client('openrgb-client', 6742, 'localhost');
@@ -112,14 +112,14 @@ const parseResult = async (result) => {
             result.shift();
             let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
             //process result
-            let processor = exec('python /home/prayuj/Projects/VoiceRecognition/processing.py \"' + result.join(' ') + '\"' + ' ' + sink);
+            let processor = exec('python /home/prayuj/repos/vosk_recognition/processing.py \"' + result.join(' ') + '\"' + ' ' + sink);
             await setColor(0, 0, 0);
         }
         else if (waiting) {
             waiting = false;
             let output = exec('notify-send -u normal -t 3000 \"Recognized: ' + result.join(' ') + '\"');
             // process result
-            let processor = exec('python /home/prayuj/Projects/VoiceRecognition/processing.py \"' + result.join(' ') + '\"' + ' ' + sink);
+            let processor = exec('python /home/prayuj/repos/vosk_recognition/processing.py \"' + result.join(' ') + '\"' + ' ' + sink);
             await setColor(0, 0, 0);
         }
         last_partial = '';
