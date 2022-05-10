@@ -15,7 +15,6 @@ const background = ['the', 'on', 'to', 'from', 'on', 'in', 'by', 'this', 'at'];
 const delay = 2000;
 const longDelay = 2500;
 
-
 let waiting = false;
 let last_partial = '';
 let card = process.argv[2]
@@ -25,6 +24,7 @@ const model = new vosk.Model(MODEL_PATH);
 const rec = new vosk.Recognizer({model: model, sampleRate: SAMPLE_RATE});
 
 const timer = new Timer(async () => {
+    let processor = exec('python /home/prayuj/repos/vosk_recognition/processing.py \"' + last_partial + '\"' + ' ' + sink);
     rec.reset();
     await setColor(0, 0, 0);
     waiting = false;
